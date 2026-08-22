@@ -375,6 +375,11 @@ impl ReadView {
         ))
     }
 
+    /// Read an engine-level scalar.
+    pub fn meta_u64(&self, key: &str) -> Result<u64> {
+        self.read_u64(key)
+    }
+
     fn read_u64(&self, key: &str) -> Result<u64> {
         let table = self.txn.open_table(META)?;
         Ok(table
@@ -438,12 +443,7 @@ impl WriteBatch {
     pub fn put_edge(&self, edge: &Edge) -> Result<Option<u64>> {
         {
             let adjacency = self.txn.open_table(ADJACENCY)?;
-            let key = keys::adjacency(
-                edge.from,
-                StoredDirection::Out,
-                edge.edge_type,
-                edge.to,
-            );
+            let key = keys::adjacency(edge.from, StoredDirection::Out, edge.edge_type, edge.to);
             if adjacency.get(key.as_slice())?.is_some() {
                 return Ok(None);
             }
@@ -463,8 +463,7 @@ impl WriteBatch {
                 seq,
             )?;
             adjacency.insert(
-                keys::adjacency(edge.to, StoredDirection::In, edge.edge_type, edge.from)
-                    .as_slice(),
+                keys::adjacency(edge.to, StoredDirection::In, edge.edge_type, edge.from).as_slice(),
                 seq,
             )?;
         }
@@ -486,7 +485,8 @@ impl WriteBatch {
         let key = keys::vector(namespace, node);
         let is_new = {
             let mut vectors = self.txn.open_table(VECTORS)?;
-            let previous = vectors.insert(key.as_slice(), codec::encode_vector(vector).as_slice())?;
+            let previous =
+                vectors.insert(key.as_slice(), codec::encode_vector(vector).as_slice())?;
             previous.is_none()
         };
 
@@ -553,6 +553,13 @@ impl WriteBatch {
     pub fn set_applied_lsn(&self, lsn: Lsn) -> Result<()> {
         let mut meta = self.txn.open_table(META)?;
         meta.insert(META_APPLIED_LSN, &lsn.to_le_bytes()[..])?;
+        Ok(())
+    }
+
+    /// Write an engine-level scalar.
+    pub fn set_meta_u64(&self, key: &str, value: u64) -> Result<()> {
+        let mut meta = self.txn.open_table(META)?;
+        meta.insert(key, &value.to_le_bytes()[..])?;
         Ok(())
     }
 
@@ -688,7 +695,11 @@ mod tests {
         assert_eq!(inbound[0].target, a.id());
 
         // The wrong direction finds nothing.
-        assert!(view.neighbors(a.id(), &[], Direction::In).unwrap().is_empty());
+        assert!(
+            view.neighbors(a.id(), &[], Direction::In)
+                .unwrap()
+                .is_empty()
+        );
         // Filtering by an unrelated edge type finds nothing.
         assert!(
             view.neighbors(a.id(), &[EdgeType::Mentions], Direction::Out)
@@ -732,7 +743,11 @@ mod tests {
         batch.commit().unwrap();
 
         let view = store.read().unwrap();
-        assert!(view.neighbors(a.id(), &[], Direction::Out).unwrap().is_empty());
+        assert!(
+            view.neighbors(a.id(), &[], Direction::Out)
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]
@@ -747,7 +762,10 @@ mod tests {
         batch.commit().unwrap();
 
         let view = store.read().unwrap();
-        assert_eq!(view.get_vector("m:3", a).unwrap().unwrap(), vec![1.0, 2.0, 3.0]);
+        assert_eq!(
+            view.get_vector("m:3", a).unwrap().unwrap(),
+            vec![1.0, 2.0, 3.0]
+        );
         let namespaces = view.namespaces().unwrap();
         assert_eq!(namespaces["m:3"].count, 2);
         assert_eq!(namespaces["m:3"].dim, 3);
@@ -781,8 +799,12 @@ mod tests {
     fn wrong_dimension_for_a_namespace_is_rejected() {
         let (_dir, store) = store();
         let batch = store.write().unwrap();
-        batch.put_vector("m:3", NodeId::new(), &[1.0, 2.0, 3.0]).unwrap();
-        let err = batch.put_vector("m:3", NodeId::new(), &[1.0, 2.0]).unwrap_err();
+        batch
+            .put_vector("m:3", NodeId::new(), &[1.0, 2.0, 3.0])
+            .unwrap();
+        let err = batch
+            .put_vector("m:3", NodeId::new(), &[1.0, 2.0])
+            .unwrap_err();
         assert!(matches!(err, Error::DimensionMismatch { .. }), "got {err}");
     }
 
@@ -805,7 +827,8 @@ mod tests {
             let batch = store.write().unwrap();
             {
                 let mut meta = batch.txn.open_table(META).unwrap();
-                meta.insert(META_FORMAT_VERSION, &999u32.to_le_bytes()[..]).unwrap();
+                meta.insert(META_FORMAT_VERSION, &999u32.to_le_bytes()[..])
+                    .unwrap();
             }
             batch.commit().unwrap();
         }
@@ -813,6 +836,9 @@ mod tests {
             Ok(_) => panic!("expected an incompatible-format error"),
             Err(e) => e,
         };
-        assert!(matches!(err, Error::IncompatibleFormat { found: 999, .. }), "got {err}");
+        assert!(
+            matches!(err, Error::IncompatibleFormat { found: 999, .. }),
+            "got {err}"
+        );
     }
 }

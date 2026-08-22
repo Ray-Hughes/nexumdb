@@ -47,7 +47,9 @@ pub enum Error {
     #[error("write-ahead log corrupted at offset {offset}: {reason}")]
     WalCorrupt { offset: u64, reason: String },
 
-    #[error("database at `{path}` was created by an incompatible format version {found} (this build supports {supported})")]
+    #[error(
+        "database at `{path}` was created by an incompatible format version {found} (this build supports {supported})"
+    )]
     IncompatibleFormat {
         path: String,
         found: u32,
@@ -65,10 +67,6 @@ pub enum Error {
 }
 
 impl Error {
-    pub(crate) fn storage<E: std::fmt::Display>(e: E) -> Self {
-        Error::Storage(e.to_string())
-    }
-
     pub(crate) fn codec<E: std::fmt::Display>(e: E) -> Self {
         Error::Codec(e.to_string())
     }

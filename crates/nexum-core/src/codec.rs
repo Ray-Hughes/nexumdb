@@ -50,7 +50,9 @@ pub fn decode_vector(bytes: &[u8]) -> Result<Vec<f32>> {
         )));
     }
     Ok(bytes
-        .chunks_exact(4)
+        .as_chunks::<4>()
+        .0
+        .iter()
         .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
         .collect())
 }
@@ -67,7 +69,10 @@ mod tests {
 
     #[test]
     fn empty_vector_roundtrips() {
-        assert_eq!(Vec::<f32>::new(), decode_vector(&encode_vector(&[])).unwrap());
+        assert_eq!(
+            Vec::<f32>::new(),
+            decode_vector(&encode_vector(&[])).unwrap()
+        );
     }
 
     #[test]

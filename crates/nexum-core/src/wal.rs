@@ -165,8 +165,10 @@ impl Wal {
         };
         let payload = codec::encode(&record)?;
         self.writer.write_all(&MAGIC.to_le_bytes())?;
-        self.writer.write_all(&(payload.len() as u32).to_le_bytes())?;
-        self.writer.write_all(&checksum_of(&payload).to_le_bytes())?;
+        self.writer
+            .write_all(&(payload.len() as u32).to_le_bytes())?;
+        self.writer
+            .write_all(&checksum_of(&payload).to_le_bytes())?;
         self.writer.write_all(&payload)?;
         self.next_lsn += 1;
         self.dirty = true;
@@ -256,10 +258,7 @@ impl Wal {
         }
         std::fs::rename(&tmp, &self.path)?;
 
-        let file = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .open(&self.path)?;
+        let file = OpenOptions::new().read(true).write(true).open(&self.path)?;
         let reclaimed = file.metadata()?.len();
         self.writer = BufWriter::new(file);
         self.writer.seek(SeekFrom::End(0))?;

@@ -420,7 +420,10 @@ macro_rules! lift {
 }
 
 impl Serialize for Node {
-    fn serialize<S: serde::Serializer>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error> {
+    fn serialize<S: serde::Serializer>(
+        &self,
+        serializer: S,
+    ) -> std::result::Result<S::Ok, S::Error> {
         if serializer.is_human_readable() {
             project!(self, NodeJsonRef).serialize(serializer)
         } else {
@@ -721,7 +724,10 @@ mod tests {
                 "expected a flat `kind` discriminant, got {json}"
             );
             // The payload must be flattened alongside the tag, not nested.
-            assert!(json.get("id").is_some(), "id should sit beside kind: {json}");
+            assert!(
+                json.get("id").is_some(),
+                "id should sit beside kind: {json}"
+            );
         }
     }
 

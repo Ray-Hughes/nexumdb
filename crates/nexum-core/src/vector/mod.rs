@@ -163,22 +163,26 @@ impl VectorIndexSet {
                     [] => Err(Error::UnknownNamespace(model.to_string())),
                     many => Err(Error::InvalidArgument(format!(
                         "model `{model}` is indexed at several dimensions ({}); pass the full namespace",
-                        many.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", ")
+                        many.iter()
+                            .map(|s| s.as_str())
+                            .collect::<Vec<_>>()
+                            .join(", ")
                     ))),
                 }
             }
-            None => self
-                .sole_namespace()
-                .map(str::to_string)
-                .ok_or_else(|| match self.indexes.len() {
-                    0 => Error::InvalidArgument(
-                        "this database has no embeddings yet — ingest something first".into(),
-                    ),
-                    _ => Error::InvalidArgument(format!(
-                        "several embedding models present ({}); specify one",
-                        self.namespaces().join(", ")
-                    )),
-                }),
+            None => {
+                self.sole_namespace()
+                    .map(str::to_string)
+                    .ok_or_else(|| match self.indexes.len() {
+                        0 => Error::InvalidArgument(
+                            "this database has no embeddings yet — ingest something first".into(),
+                        ),
+                        _ => Error::InvalidArgument(format!(
+                            "several embedding models present ({}); specify one",
+                            self.namespaces().join(", ")
+                        )),
+                    })
+            }
         }
     }
 

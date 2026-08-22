@@ -362,7 +362,13 @@ impl Hnsw {
     }
 
     /// Best-first search on one layer, returning up to `ef` candidates.
-    fn search_layer(&self, query: &[f32], entries: &[u32], ef: usize, level: usize) -> Vec<Candidate> {
+    fn search_layer(
+        &self,
+        query: &[f32],
+        entries: &[u32],
+        ef: usize,
+        level: usize,
+    ) -> Vec<Candidate> {
         let mut visited: HashSet<u32> = HashSet::with_capacity(ef * 2);
         let mut frontier: BinaryHeap<Nearest> = BinaryHeap::new();
         let mut best: BinaryHeap<Candidate> = BinaryHeap::new();
@@ -436,7 +442,8 @@ impl Hnsw {
             if let Some(closest) = candidates.first() {
                 current = closest.idx;
             }
-            let selected = self.select_neighbors(&vector, &candidates, self.params.max_links(l), idx);
+            let selected =
+                self.select_neighbors(&vector, &candidates, self.params.max_links(l), idx);
 
             self.set_links(idx, l, selected.clone());
             for neighbor in selected {
@@ -562,7 +569,12 @@ impl Hnsw {
             })
             .collect();
         candidates.sort();
-        let kept = self.select_neighbors(&node_vector, &candidates, self.params.max_links(level), node);
+        let kept = self.select_neighbors(
+            &node_vector,
+            &candidates,
+            self.params.max_links(level),
+            node,
+        );
         self.links[node as usize][level] = kept;
     }
 
@@ -774,7 +786,12 @@ mod tests {
     fn empty_index_returns_nothing() {
         let index = Hnsw::new(4, HnswParams::default());
         assert!(index.is_empty());
-        assert!(index.search(&[1.0, 0.0, 0.0, 0.0], 5, None, None).unwrap().is_empty());
+        assert!(
+            index
+                .search(&[1.0, 0.0, 0.0, 0.0], 5, None, None)
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]
@@ -854,7 +871,10 @@ mod tests {
 
         let hits = index.search(&[0.0, 1.0, 0.0, 0.0], 1, None, None).unwrap();
         assert_eq!(hits[0].id, id);
-        assert!(hits[0].distance < 1e-4, "should match the replacement vector");
+        assert!(
+            hits[0].distance < 1e-4,
+            "should match the replacement vector"
+        );
     }
 
     #[test]
@@ -865,7 +885,11 @@ mod tests {
         let filter = |id: NodeId| keep.contains(&id);
 
         let hits = index.search(&data[0], 10, Some(32), Some(&filter)).unwrap();
-        assert_eq!(hits.len(), 10, "search should widen ef rather than return short");
+        assert_eq!(
+            hits.len(),
+            10,
+            "search should widen ef rather than return short"
+        );
         assert!(hits.iter().all(|h| keep.contains(&h.id)));
     }
 
@@ -873,7 +897,12 @@ mod tests {
     fn a_filter_matching_nothing_returns_empty_without_hanging() {
         let (index, _, data) = build(200, 16, 8);
         let filter = |_: NodeId| false;
-        assert!(index.search(&data[0], 10, None, Some(&filter)).unwrap().is_empty());
+        assert!(
+            index
+                .search(&data[0], 10, None, Some(&filter))
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]
@@ -950,9 +979,15 @@ mod tests {
         // level is 1/M as likely as the one below it. With M = 16 that puts
         // 93.75% of nodes on layer 0 alone.
         let level0 = counts[0] as f64 / n as f64;
-        assert!((0.925..0.950).contains(&level0), "level-0 share was {level0:.4}");
+        assert!(
+            (0.925..0.950).contains(&level0),
+            "level-0 share was {level0:.4}"
+        );
         let level1 = counts[1] as f64 / n as f64;
-        assert!((0.050..0.075).contains(&level1), "level-1 share was {level1:.4}");
+        assert!(
+            (0.050..0.075).contains(&level1),
+            "level-1 share was {level1:.4}"
+        );
         assert!(counts[0] > counts[1] && counts[1] > counts[2]);
     }
 

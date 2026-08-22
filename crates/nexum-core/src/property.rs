@@ -195,9 +195,9 @@ impl From<PropertyValue> for serde_json::Value {
             PropertyValue::List(l) => {
                 serde_json::Value::Array(l.into_iter().map(Into::into).collect())
             }
-            PropertyValue::Map(m) => serde_json::Value::Object(
-                m.into_iter().map(|(k, v)| (k, v.into())).collect(),
-            ),
+            PropertyValue::Map(m) => {
+                serde_json::Value::Object(m.into_iter().map(|(k, v)| (k, v.into())).collect())
+            }
         }
     }
 }
@@ -353,7 +353,10 @@ mod tests {
             ("null".into(), PropertyValue::Null),
             (
                 "list".into(),
-                PropertyValue::List(vec![PropertyValue::Int(1), PropertyValue::Text("two".into())]),
+                PropertyValue::List(vec![
+                    PropertyValue::Int(1),
+                    PropertyValue::Text("two".into()),
+                ]),
             ),
         ]))
     }

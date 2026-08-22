@@ -155,7 +155,7 @@ impl fmt::Display for ContentHash {
 
 impl fmt::Debug for ContentHash {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ContentHash({})", &self.0)
+        write!(f, "ContentHash({})", self.0)
     }
 }
 

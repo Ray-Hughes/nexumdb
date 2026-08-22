@@ -190,7 +190,12 @@ mod tests {
             assert!(other_type < lo || other_type > hi);
             let other_dir = adjacency(a, StoredDirection::In, EdgeType::Mentions, target);
             assert!(other_dir < lo || other_dir > hi);
-            let other_node = adjacency(NodeId::new(), StoredDirection::Out, EdgeType::Mentions, target);
+            let other_node = adjacency(
+                NodeId::new(),
+                StoredDirection::Out,
+                EdgeType::Mentions,
+                target,
+            );
             assert!(other_node < lo || other_node > hi);
         }
     }
