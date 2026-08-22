@@ -11,3 +11,4 @@ dist-ssr
 *.redb
 *.log
 /apps/viewer/src-tauri/target
+apps/viewer/src-tauri/gen

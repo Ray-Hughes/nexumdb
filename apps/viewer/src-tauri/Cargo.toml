@@ -1,0 +1,39 @@
+# Its own workspace: the desktop shell pulls in WebKit/WebView system
+# dependencies that the engine crates deliberately avoid, and keeping it out of
+# the root workspace keeps `cargo test --workspace` buildable on a bare CI box.
+[workspace]
+
+[package]
+name = "nexum-viewer"
+description = "NexumDB desktop viewer"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+license = "Apache-2.0"
+
+[lib]
+name = "nexum_viewer_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+nexum-core = { path = "../../../crates/nexum-core" }
+nexum-client = { path = "../../../crates/nexum-client", features = ["local"] }
+nexum-server = { path = "../../../crates/nexum-server", features = ["local"] }
+nexum-embed = { path = "../../../crates/nexum-embed", features = ["local"] }
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
