@@ -1,5 +1,6 @@
 [package]
 name = "nexum-embed"
+description = "Pluggable embedding providers for NexumDB"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -7,4 +8,26 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 
+[features]
+default = []
+# Bundles an ONNX Runtime session so embeddings work with no API key and no
+# network. Off by default because it pulls a native runtime into the build;
+# the CLI and desktop app turn it on.
+local = ["dep:ort", "dep:tokenizers", "dep:sha2"]
+
 [dependencies]
+nexum-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tokio.workspace = true
+reqwest.workspace = true
+parking_lot.workspace = true
+async-trait.workspace = true
+ort = { version = "2.0.0-rc.13", optional = true, default-features = false, features = ["std", "ndarray", "download-binaries", "tls-rustls"] }
+tokenizers = { version = "0.23", optional = true, default-features = false, features = ["onig"] }
+sha2 = { version = "0.10", optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "macros"] }

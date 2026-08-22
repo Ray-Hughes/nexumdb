@@ -44,6 +44,8 @@ parking_lot = "0.12"
 half = { version = "2", features = ["serde"] }
 time = { version = "0.3", features = ["serde", "formatting", "parsing", "macros"] }
 tempfile = "3"
+async-trait = "0.1"
+futures = "0.3"
 
 [profile.release]
 opt-level = 3
