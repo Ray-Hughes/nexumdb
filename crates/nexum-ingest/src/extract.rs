@@ -331,49 +331,60 @@ impl RuleExtractor {
     }
 
     /// Find candidate names: runs of capitalised words, and acronyms.
+    ///
+    /// Runs are bounded by line breaks as well as sentence ends. A heading
+    /// carries no terminal punctuation, so without the line boundary it merges
+    /// into the sentence below it and the two run together into one nonsense
+    /// entity.
     fn find_candidates(&self, text: &str) -> Vec<String> {
         let mut out = Vec::new();
 
-        for sentence in crate::chunk::split_sentences(text) {
-            let words: Vec<&str> = sentence.split_whitespace().collect();
-            let mut run: Vec<String> = Vec::new();
+        for line in text.lines() {
+            // Markdown heading, list, and quote markers are punctuation, not
+            // part of any name.
+            let line = line.trim_start_matches(['#', '-', '*', '>', ' ', '\t']);
 
-            for (position, raw) in words.iter().enumerate() {
-                let word = raw.trim_matches(|c: char| {
-                    !c.is_alphanumeric() && c != '.' && c != '&' && c != '-' && c != '\''
-                });
-                let bare = word.trim_end_matches('.');
+            for sentence in crate::chunk::split_sentences(line) {
+                let words: Vec<&str> = sentence.split_whitespace().collect();
+                let mut run: Vec<String> = Vec::new();
 
-                if bare.is_empty() {
-                    flush(&mut run, &mut out);
-                    continue;
-                }
+                for (position, raw) in words.iter().enumerate() {
+                    let word = raw.trim_matches(|c: char| {
+                        !c.is_alphanumeric() && c != '.' && c != '&' && c != '-' && c != '\''
+                    });
+                    let bare = word.trim_end_matches('.');
 
-                let capitalised = bare.chars().next().is_some_and(char::is_uppercase);
-                // A capitalised word at the start of a sentence carries no
-                // signal on its own — most of them are ordinary words.
-                let informative = capitalised
-                    && !(position == 0 && STOPWORDS.contains(&bare.to_lowercase().as_str()));
-                // Lowercase connectors stay inside a run: "Bank of England".
-                let connector = !run.is_empty()
-                    && matches!(
-                        bare.to_lowercase().as_str(),
-                        "of" | "and" | "for" | "the" | "de" | "van" | "von"
-                    );
+                    if bare.is_empty() {
+                        flush(&mut run, &mut out);
+                        continue;
+                    }
 
-                if informative || connector {
-                    run.push(word.to_string());
-                    // Punctuation after the word ends the name: in
-                    // "Later, Dr. Grace Hopper" the comma separates the
-                    // adverb from the name that follows it.
-                    if raw.ends_with([',', ';', ':', ')', ']', '"']) {
+                    let capitalised = bare.chars().next().is_some_and(char::is_uppercase);
+                    // A capitalised word at the start of a sentence carries no
+                    // signal on its own — most of them are ordinary words.
+                    let informative = capitalised
+                        && !(position == 0 && STOPWORDS.contains(&bare.to_lowercase().as_str()));
+                    // Lowercase connectors stay inside a run: "Bank of England".
+                    let connector = !run.is_empty()
+                        && matches!(
+                            bare.to_lowercase().as_str(),
+                            "of" | "and" | "for" | "the" | "de" | "van" | "von"
+                        );
+
+                    if informative || connector {
+                        run.push(word.to_string());
+                        // Punctuation after the word ends the name: in
+                        // "Later, Dr. Grace Hopper" the comma separates the
+                        // adverb from the name that follows it.
+                        if raw.ends_with([',', ';', ':', ')', ']', '"']) {
+                            flush(&mut run, &mut out);
+                        }
+                    } else {
                         flush(&mut run, &mut out);
                     }
-                } else {
-                    flush(&mut run, &mut out);
                 }
+                flush(&mut run, &mut out);
             }
-            flush(&mut run, &mut out);
         }
         out
     }
@@ -564,6 +575,28 @@ mod tests {
         let found = names(&e);
         assert!(found.contains("Ada Lovelace"), "got {found:?}");
         assert!(found.contains("Charles Babbage"), "got {found:?}");
+    }
+
+    #[tokio::test]
+    async fn a_heading_does_not_merge_into_the_line_below_it() {
+        let e = extract("# Ada Lovelace and the Analytical Engine\nAda Lovelace wrote it.").await;
+        let found = names(&e);
+        assert!(
+            !found.iter().any(|n| n.split_whitespace().count() > 6),
+            "a heading ran into the next line: {found:?}"
+        );
+        assert!(found.contains("Ada Lovelace"), "got {found:?}");
+        assert!(found.iter().all(|n| !n.starts_with('#')), "got {found:?}");
+    }
+
+    #[tokio::test]
+    async fn list_markers_are_stripped() {
+        let e = extract("- Acme Corp. is listed\n* Globex Industries too").await;
+        let found = names(&e);
+        assert!(
+            found.iter().all(|n| !n.starts_with(['-', '*'])),
+            "got {found:?}"
+        );
     }
 
     #[tokio::test]

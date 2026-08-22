@@ -75,7 +75,16 @@ impl Store {
     /// Open or create the store at `path`, verifying the format version.
     pub fn open(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref();
-        let db = Database::create(path)?;
+        // Single-writer means a second process is refused, which is correct
+        // but opaque unless the message says what is holding the lock.
+        let db = Database::create(path).map_err(|e| {
+            let text = e.to_string();
+            if text.contains("already open") || text.contains("Cannot acquire lock") {
+                Error::WriterLocked
+            } else {
+                Error::Storage(text)
+            }
+        })?;
         let store = Store { db };
         store.bootstrap(path)?;
         Ok(store)

@@ -56,7 +56,11 @@ pub enum Error {
         supported: u32,
     },
 
-    #[error("database is locked by another writer")]
+    #[error(
+        "this database is already open in another process — NexumDB allows one \
+         writer at a time. If `nexum serve` is running, stop it or use its HTTP \
+         API instead."
+    )]
     WriterLocked,
 
     #[error("invalid identifier `{0}`")]

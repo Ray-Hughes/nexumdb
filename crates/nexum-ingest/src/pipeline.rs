@@ -100,6 +100,9 @@ impl IngestOutcome {
 pub struct IngestReport {
     pub source_uri: String,
     pub title: String,
+    /// Flattened, so the JSON reads `{"outcome": "created", "version": 1}`
+    /// rather than nesting a tagged object inside an `outcome` key.
+    #[serde(flatten)]
     pub outcome: IngestOutcome,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub document_id: Option<NodeId>,

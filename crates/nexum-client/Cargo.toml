@@ -1,5 +1,6 @@
 [package]
 name = "nexum-client"
+description = "Fluent client library for NexumDB"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -7,4 +8,20 @@ license.workspace = true
 repository.workspace = true
 authors.workspace = true
 
+[features]
+default = []
+local = ["nexum-embed/local"]
+
 [dependencies]
+nexum-core.workspace = true
+nexum-embed.workspace = true
+nexum-ingest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+tokio = { workspace = true, features = ["rt", "macros"] }
