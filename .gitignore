@@ -1,0 +1,13 @@
+/target
+**/target
+Cargo.lock.bak
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+.env
+.env.local
+*.redb
+*.log
+/apps/viewer/src-tauri/target
