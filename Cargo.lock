@@ -920,6 +920,18 @@ dependencies = [
 [[package]]
 name = "nexum-ingest"
 version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "blake3",
+ "nexum-core",
+ "nexum-embed",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "tracing",
+]
 
 [[package]]
 name = "nexum-server"
